@@ -1,32 +1,38 @@
-// Obtener el formulario de login
+// Obtener los formularios de login y pedido
 const loginForm = document.getElementById('login-form');
 const pedidoForm = document.getElementById('pedido-form');
 
+// Manejador de inicio de sesión
 loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
 
-    const response = await fetch('http://localhost:5000/api/auth/login', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password })
-    });
+    try {
+        const response = await fetch('http://localhost:5000/api/auth/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email, password })
+        });
 
-    const data = await response.json();
+        const data = await response.json();
 
-    if (data.token) {
-        localStorage.setItem('token', data.token);  // Guarda el token en localStorage
-        loginForm.style.display = 'none';
-        pedidoForm.style.display = 'block'; // Muestra el formulario de pedido
-    } else {
-        alert('Credenciales incorrectas');
+        if (response.ok) {
+            localStorage.setItem('token', data.token);  // Guarda el token en localStorage
+            loginForm.style.display = 'none';
+            pedidoForm.style.display = 'block'; // Muestra el formulario de pedidos
+        } else {
+            alert(data.message || 'Error al iniciar sesión');
+        }
+    } catch (error) {
+        console.error('Error al iniciar sesión:', error);
+        alert('Hubo un error con la solicitud de login');
     }
 });
 
-// Crear pedido
+// Crear un pedido
 pedidoForm.querySelector('form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const producto = document.getElementById('producto').value;
@@ -38,19 +44,26 @@ pedidoForm.querySelector('form').addEventListener('submit', async (e) => {
         return;
     }
 
-    const response = await fetch('http://localhost:5000/api/pedido', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ producto, cantidad })
-    });
+    try {
+        const response = await fetch('http://localhost:5000/api/orders', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,  // Enviar token de autorización
+            },
+            body: JSON.stringify({ producto, cantidad })
+        });
 
-    const data = await response.json();
-    if (data.message) {
-        alert('Pedido creado');
-    } else {
-        alert('Error al crear el pedido');
+        const data = await response.json();
+
+        if (response.ok) {
+            alert('Pedido creado exitosamente');
+            // Puedes agregar lógica para limpiar el formulario o mostrar el nuevo pedido
+        } else {
+            alert(data.message || 'Error al crear el pedido');
+        }
+    } catch (error) {
+        console.error('Error al crear el pedido:', error);
+        alert('Hubo un error al crear el pedido');
     }
 });
